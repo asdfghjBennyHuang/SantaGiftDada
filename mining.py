@@ -85,68 +85,148 @@ def avg_normalized_happiness(pred, child_pref, gift_pref):
 	return float(math.pow(total_child_happiness*multiplier,3) + math.pow(np.sum(total_gift_happiness),3)) / float(math.pow(common_denom,3))
 	# return math.pow(float(total_child_happiness)/(float(n_children)*float(max_child_happiness)),2) + math.pow(np.mean(total_gift_happiness) / float(max_gift_happiness*n_gift_quantity),2)
 
+def triple_check_and_swap(first,pred,gift_pref,child_pref,num):
+	second=random.randrange(45001,1000000)
+	count=0
+	index=second+1
+	child_id=pred[first][0]
+	gift_id=pred[first][1]
+	index_list=[]
+	index_list.append(second)
+
+	while(count<num-1 and index<1000000):
+		if pred[index][1]==gift_id:
+			index_list.append(index)
+			count+=1
+		index+=1
+
+	if count<num-1:
+		return pred
+
+	child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
+	if not child_happiness:
+		child_happiness = -1
+
+	gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
+	if not gift_happiness:
+		gift_happiness = -1
+
+	initial_happiness=child_happiness+gift_happiness
+
+	for ind in index_list:
+		child_id=pred[ind][0]
+		gift_id=pred[ind][1]
+		child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
+		if not child_happiness:
+			child_happiness = -1
+
+		gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
+		if not gift_happiness:
+			gift_happiness = -1
+
+		initial_happiness=child_happiness+gift_happiness
+
+	child_id=pred[first][0]
+	gift_id=pred[second][1]
+	child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
+	if not child_happiness:
+		child_happiness = -1
+
+	gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
+	if not gift_happiness:
+		gift_happiness = -1
+
+	after_happiness=child_happiness+gift_happiness
+
+	for ind in index_list:
+		child_id=pred[ind][0]
+		gift_id=pred[first][1]
+		child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
+		if not child_happiness:
+			child_happiness = -1
+
+		gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
+		if not gift_happiness:
+			gift_happiness = -1
+
+		after_happiness=child_happiness+gift_happiness
+
+	if after_happiness> initial_happiness:
+		temp=pred[first][1]
+		pred[first][1]=pred[second][1]
+		for ind in index_list:
+			pred[ind][1]=temp
+
+	return pred
+
 def data_mining(pred, gift_pref, child_pref):
 	#print(avg_normalized_happiness(pred, child_pref, gift_pref))
 	for num in range(0,100):
-		first=random.randrange(45001,1000000)
-		second=random.randrange(45001,1000000)
-		child_id=pred[first][0]
-		gift_id=pred[first][1]
-
-		child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
-		if not child_happiness:
-			child_happiness = -1
-
-		gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
-		if not gift_happiness:
-			gift_happiness = -1
-
-		initial_happiness=child_happiness+gift_happiness
-
-		child_id=pred[second][0]
-		gift_id=pred[second][1]
-
-		child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
-		if not child_happiness:
-			child_happiness = -1
-
-		gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
-		if not gift_happiness:
-			gift_happiness = -1
-
-		initial_happiness=child_happiness+gift_happiness
-
-		child_id=pred[first][0]
-		gift_id=pred[second][1]
-
-		child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
-		if not child_happiness:
-		    child_happiness = -1
-
-		gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
-		if not gift_happiness:
-			gift_happiness = -1
-
-		after_happiness=child_happiness+gift_happiness
-
-		child_id=pred[second][0]
-		gift_id=pred[first][1]
-
-		child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
-		if not child_happiness:
-		    child_happiness = -1
-
-		gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
-		if not gift_happiness:
-		    gift_happiness = -1
-
-		after_happiness=child_happiness+gift_happiness
-		if after_happiness> initial_happiness:
-			temp=pred[first][1]
+		first=random.randrange(1,1000000)
+		if first<=5000:
+			pred=triple_check_and_swap(first,pred,gift_pref,child_pref,3)
+		elif first>5000 and first<=45000:
+			pred=triple_check_and_swap(first,pred,gift_pref,child_pref,2)
+		else:
+			second=random.randrange(45001,1000000)
 			
-			pred[first][1]=pred[second][1]
+			child_id=pred[first][0]
+			gift_id=pred[first][1]
 
-			pred[second][1]=temp
+			child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
+			if not child_happiness:
+				child_happiness = -1
+
+			gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
+			if not gift_happiness:
+				gift_happiness = -1
+
+			initial_happiness=child_happiness+gift_happiness
+
+			child_id=pred[second][0]
+			gift_id=pred[second][1]
+
+			child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
+			if not child_happiness:
+				child_happiness = -1
+
+			gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
+			if not gift_happiness:
+				gift_happiness = -1
+
+			initial_happiness=child_happiness+gift_happiness
+
+			child_id=pred[first][0]
+			gift_id=pred[second][1]
+
+			child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
+			if not child_happiness:
+			    child_happiness = -1
+
+			gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
+			if not gift_happiness:
+				gift_happiness = -1
+
+			after_happiness=child_happiness+gift_happiness
+
+			child_id=pred[second][0]
+			gift_id=pred[first][1]
+
+			child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
+			if not child_happiness:
+			    child_happiness = -1
+
+			gift_happiness = ( n_child_pref - np.where(child_pref[gift_id]==child_id)[0]) * ratio_gift_happiness
+			if not gift_happiness:
+			    gift_happiness = -1
+
+			after_happiness=child_happiness+gift_happiness
+			if after_happiness> initial_happiness:
+				temp=pred[first][1]
+				
+				pred[first][1]=pred[second][1]
+
+				pred[second][1]=temp
 
 	print(avg_normalized_happiness(pred, child_pref, gift_pref))
 
