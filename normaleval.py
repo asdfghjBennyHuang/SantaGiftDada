@@ -80,3 +80,4 @@ def avg_normalized_happiness(pred, child_pref, gift_pref):
 	# # usually denom1 > demon2
 	return float(math.pow(total_child_happiness*multiplier,3) + math.pow(np.sum(total_gift_happiness),3)) / float(math.pow(common_denom,3)),normalized_child_happiness,normalized_gift_happiness
 	# return math.pow(float(total_child_happiness)/(float(n_children)*float(max_child_happiness)),2) + math.pow(np.mean(total_gift_happiness) / float(max_gift_happiness*n_gift_quantity),2)
+>>>>>>> 5b5537920a22dddc5ace3af8c7028cb2a7cb035b
