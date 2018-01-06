@@ -3,6 +3,7 @@ import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import math
 from collections import Counter
 import random
+import time
 
 n_children = 1000000 # n children to give
 n_gift_type = 1000 # n types of gifts available
@@ -14,8 +15,10 @@ triplets = math.ceil(0.005 * n_children / 3.) * 3    # 0.5% of all population, r
 ratio_gift_happiness = 2
 ratio_child_happiness = 2
 
-gift_pref = pd.read_csv('../input/child_wishlist_v2.csv',header=None).drop(0, 1).values
-child_pref = pd.read_csv('../input/gift_goodkids_v2.csv',header=None).drop(0, 1).values
+gift_pref = pd.read_csv('child_wishlist_v2.csv',header=None).drop(0, 1).values
+child_pref = pd.read_csv('gift_goodkids_v2.csv',header=None).drop(0, 1).values
+
+effective_swap_count = 0
 
 def lcm(a, b):
 	"""Compute the lowest common multiple of a and b"""
@@ -69,8 +72,8 @@ def avg_normalized_happiness(pred, child_pref, gift_pref):
 	    total_child_happiness += child_happiness
 	    total_gift_happiness[gift_id] += gift_happiness
 
-	print('normalized child happiness=',float(total_child_happiness)/(float(n_children)*float(max_child_happiness)) , \
-	    ', normalized gift happiness',np.mean(total_gift_happiness) / float(max_gift_happiness*n_gift_quantity))
+	print('normalized child happiness=',float(total_child_happiness)/(float(n_children)*float(max_child_happiness)))
+	print('normalized gift happiness=',np.mean(total_gift_happiness) / float(max_gift_happiness*n_gift_quantity))
 
 	# to avoid float rounding error
 	# find common denominator
@@ -86,13 +89,19 @@ def avg_normalized_happiness(pred, child_pref, gift_pref):
 	# return math.pow(float(total_child_happiness)/(float(n_children)*float(max_child_happiness)),2) + math.pow(np.mean(total_gift_happiness) / float(max_gift_happiness*n_gift_quantity),2)
 
 def triple_check_and_swap(first,pred,gift_pref,child_pref,num):
+
+	global effective_swap_count
+
 	second=random.randrange(45001,1000000)
 	count=0
 	index=second+1
-	child_id=pred[first][0]
-	gift_id=pred[first][1]
+	#child_id=pred[first][0]
+	gift_id=pred[second][1]
 	index_list=[]
 	index_list.append(second)
+
+	initial_happiness = 0
+	after_happiness = 0
 
 	while(count<num-1 and index<1000000):
 		if pred[index][1]==gift_id:
@@ -102,7 +111,9 @@ def triple_check_and_swap(first,pred,gift_pref,child_pref,num):
 
 	if count<num-1:
 		return pred
-
+		
+	child_id=pred[first][0]
+	gift_id=pred[first][1]
 	child_happiness = (n_gift_pref - np.where(gift_pref[child_id]==gift_id)[0]) * ratio_child_happiness
 	if not child_happiness:
 		child_happiness = -1
@@ -111,7 +122,7 @@ def triple_check_and_swap(first,pred,gift_pref,child_pref,num):
 	if not gift_happiness:
 		gift_happiness = -1
 
-	initial_happiness=child_happiness+gift_happiness
+	initial_happiness += ( child_happiness+gift_happiness )
 
 	for ind in index_list:
 		child_id=pred[ind][0]
@@ -124,7 +135,7 @@ def triple_check_and_swap(first,pred,gift_pref,child_pref,num):
 		if not gift_happiness:
 			gift_happiness = -1
 
-		initial_happiness=child_happiness+gift_happiness
+		initial_happiness += ( child_happiness+gift_happiness )
 
 	child_id=pred[first][0]
 	gift_id=pred[second][1]
@@ -136,7 +147,7 @@ def triple_check_and_swap(first,pred,gift_pref,child_pref,num):
 	if not gift_happiness:
 		gift_happiness = -1
 
-	after_happiness=child_happiness+gift_happiness
+	after_happiness += ( child_happiness+gift_happiness )
 
 	for ind in index_list:
 		child_id=pred[ind][0]
@@ -149,25 +160,55 @@ def triple_check_and_swap(first,pred,gift_pref,child_pref,num):
 		if not gift_happiness:
 			gift_happiness = -1
 
-		after_happiness=child_happiness+gift_happiness
+		after_happiness += ( child_happiness+gift_happiness )
 
 	if after_happiness> initial_happiness:
 		temp=pred[first][1]
-		pred[first][1]=pred[second][1]
+		
+		if num==3:
+			if first%3==0:
+				pred[first][1]=pred[second][1]
+				pred[first+1][1]=pred[second][1]
+				pred[first+2][1]=pred[second][1]
+			elif first%3==1:
+				pred[first][1]=pred[second][1]
+				pred[first-1][1]=pred[second][1]
+				pred[first+1][1]=pred[second][1]
+			else:
+				pred[first][1]=pred[second][1]
+				pred[first-1][1]=pred[second][1]
+				pred[first-2][1]=pred[second][1]
+		else:
+			if first%2==0:
+				pred[first][1]=pred[second][1]
+				pred[first-1][1]=pred[second][1]
+			else:
+				pred[first][1]=pred[second][1]
+				pred[first+1][1]=pred[second][1]
+		
 		for ind in index_list:
 			pred[ind][1]=temp
+			
+		effective_swap_count += 1
 
 	return pred
 
 def data_mining(pred, gift_pref, child_pref):
+
+	global effective_swap_count
+	
+	effective_swap_count = 0
+
 	#print(avg_normalized_happiness(pred, child_pref, gift_pref))
-	for num in range(0,100):
+	for num in range( 0 , 10000000 ):
 		first=random.randrange(1,1000000)
 		if first<=5000:
 			pred=triple_check_and_swap(first,pred,gift_pref,child_pref,3)
 		elif first>5000 and first<=45000:
 			pred=triple_check_and_swap(first,pred,gift_pref,child_pref,2)
 		else:
+			initial_happiness = 0
+			after_happiness = 0
 			second=random.randrange(45001,1000000)
 			
 			child_id=pred[first][0]
@@ -181,7 +222,7 @@ def data_mining(pred, gift_pref, child_pref):
 			if not gift_happiness:
 				gift_happiness = -1
 
-			initial_happiness=child_happiness+gift_happiness
+			initial_happiness += ( child_happiness + gift_happiness )
 
 			child_id=pred[second][0]
 			gift_id=pred[second][1]
@@ -194,7 +235,7 @@ def data_mining(pred, gift_pref, child_pref):
 			if not gift_happiness:
 				gift_happiness = -1
 
-			initial_happiness=child_happiness+gift_happiness
+			initial_happiness += ( child_happiness+gift_happiness )
 
 			child_id=pred[first][0]
 			gift_id=pred[second][1]
@@ -207,7 +248,7 @@ def data_mining(pred, gift_pref, child_pref):
 			if not gift_happiness:
 				gift_happiness = -1
 
-			after_happiness=child_happiness+gift_happiness
+			after_happiness += ( child_happiness+gift_happiness )
 
 			child_id=pred[second][0]
 			gift_id=pred[first][1]
@@ -220,15 +261,37 @@ def data_mining(pred, gift_pref, child_pref):
 			if not gift_happiness:
 			    gift_happiness = -1
 
-			after_happiness=child_happiness+gift_happiness
+			after_happiness += ( child_happiness+gift_happiness )
 			if after_happiness> initial_happiness:
+				# do swapping
 				temp=pred[first][1]
-				
 				pred[first][1]=pred[second][1]
-
 				pred[second][1]=temp
 
-	print(avg_normalized_happiness(pred, child_pref, gift_pref))
+				effective_swap_count += 1
 
-random_sub = pd.read_csv('../input/sample_submission_random_v2.csv').values.tolist()
-data_mining(random_sub, gift_pref, child_pref)
+	print( 'effective_swap_count : {}'.format( effective_swap_count ) )
+	return pred
+
+
+random_sub = pd.read_csv('sample_submission_random_v2.csv').values.tolist()
+
+print( 'start swapping' )
+
+for big_round in range( 40 ):
+
+	t = time.time()
+	random_sub = data_mining(random_sub, gift_pref, child_pref)
+	t = time.time() - t
+	print( 'time spend on algorithm : {}'.format( t ) )
+
+	t = time.time()
+	score = avg_normalized_happiness(random_sub, child_pref, gift_pref)
+	print( 'score : {}'.format( score ) )
+	t = time.time() - t
+	print( 'time spend on evaluating : {}'.format( t ) )
+
+	with open( 'answer_jfjshdlh_{}.csv'.format( big_round ), 'w' ) as fw:
+		fw.write( ','.join( ( str(i[1]) for i in random_sub ) ) )
+	
+	print( '-----------------------' )
